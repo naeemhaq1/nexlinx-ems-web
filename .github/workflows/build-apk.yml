@@ -1,1 +1,49 @@
+name: Build Android APK
 
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Setup Expo CLI
+      run: npm install -g @expo/cli@latest
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Setup EAS CLI
+      run: npm install -g eas-cli@latest
+
+    - name: Authenticate with Expo
+      run: eas login --non-interactive
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    - name: Build APK
+      run: eas build --platform android --profile production --non-interactive --wait
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nexlinx-ems-webview-apk
+        path: '*.apk'
+        retention-days: 30
